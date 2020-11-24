@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from webdriver_manager.firefox import GeckoDriverManager
 
-# Twilio configuration
+# Twilio configuration (Using Twilio is optional. Use this if you want to receive text messages when bot makes a purchase.)
 toNumber = 'your_phonenumber'
 fromNumber = 'twilio_phonenumber'
 accountSid = 'ssid'
