@@ -1,4 +1,5 @@
 You can test bot with this URL.
+
 https://www.bestbuy.com/site/searchpage.jsp?st=hdmi&_dyncharset=UTF-8&_dynSessConf=&id=pcat17071&type=page&sc=Global&cp=1&nrp=&sp=&qp=&list=n&af=true&iht=y&usc=All+Categories&ks=960&keys=keys
 
 1. Download Pycharm & Firefox.
@@ -30,6 +31,7 @@ to find Firefox profile type "about:profiles" in firefox. It is the Root Directo
 
 
 7. To run bot, click run then select bestbuy.
+
 ![](images/step7.png)
 
 
