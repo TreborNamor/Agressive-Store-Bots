@@ -8,7 +8,7 @@ Hello GitHub, I would like to share my method of creating a aggressive Bestbuy B
 
 	https://www.bestbuy.com/site/searchpage.jsp?st=hdmi&_dyncharset=UTF-8&_dynSessConf=&id=pcat17071&type=page&sc=Global&cp=1&nrp=&sp=&qp=&list=n&af=true&iht=y&usc=All+Categories&ks=960&keys=keys
 
-**1. Download Pycharm & Firefox.**
+**1. Download Pycharm Community Edition & Firefox.**
 
 [PyCharm](https://www.jetbrains.com/pycharm/download)
 
