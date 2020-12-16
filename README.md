@@ -10,7 +10,7 @@ Hello GitHub, I would like to share my method of creating a aggressive Bestbuy B
 
 **1. Download Pycharm Community Edition & Firefox.**
 
-[PyCharm](https://www.jetbrains.com/pycharm/download)
+[PyCharm Community Edition](https://www.jetbrains.com/pycharm/download)
 
 [FireFox](https://www.mozilla.org/en-US/firefox/new/)
 
