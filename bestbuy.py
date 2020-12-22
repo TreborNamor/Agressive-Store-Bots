@@ -20,7 +20,7 @@ client = Client(accountSid, authToken)
 
 
 # Product Page (By default, This URL will scan all RTX 3080's at one time.)
-url = 'https://www.bestbuy.com/site/searchpage.jsp?_dyncharset=UTF-8&id=pcat17071&iht=y&keys=keys&ks=960&list=n&sc=Global&st=rtx%203080&type=page&usc=All%20Categories'
+url = 'https://www.bestbuy.com/site/searchpage.jsp?_dyncharset=UTF-8&id=pcat17071&iht=y&keys=keys&ks=960&list=n&qp=category_facet%3DGPUs%20%2F%20Video%20Graphics%20Cards~abcat0507002&sc=Global&st=rtx%203080&type=page&usc=All%20Categories'
 
 def timeSleep(x, driver):
     for i in range(x, -1, -1):
