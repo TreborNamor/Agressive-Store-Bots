@@ -28,6 +28,7 @@ def timeSleep(x, driver):
         sys.stdout.write('{:2d} seconds'.format(i))
         sys.stdout.flush()
         time.sleep(1)
+    driver.execute_script('window.localStorage.clear();')    
     driver.refresh()
     sys.stdout.write('\r')
     sys.stdout.write('Page refreshed\n')
