@@ -84,6 +84,7 @@ def finding_cards(driver):
             find_all_cards = soup.find('button', {'class': 'btn btn-primary btn-mini'})
             if find_all_cards:
                 print(f'Button Found!: {find_all_cards.get_text()}')
+                time.sleep(1)
 
                 # Clicking Add to Cart.
                 driver.find_element_by_xpath("//*[@class='btn btn-primary btn-mini']").click()
