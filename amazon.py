@@ -20,85 +20,82 @@ authToken = 'authtoken'
 client = Client(accountSid, authToken)
 
 
-def timeSleep(x, driver):
+def time_sleep(x, driver):
     for i in range(x, -1, -1):
         sys.stdout.write('\r')
         sys.stdout.write('{:2d} seconds'.format(i))
         sys.stdout.flush()
         time.sleep(1)
-    driver.execute_script('window.localStorage.clear();')  
     driver.refresh()
     sys.stdout.write('\r')
     sys.stdout.write('Page refreshed\n')
     sys.stdout.flush()
 
 
-def createDriver():
+def create_driver():
     """Creating driver."""
     options = Options()
     options.headless = False  # Change To False if you want to see Firefox Browser Again.
-    profile = webdriver.FirefoxProfile(
-        r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\kwftlp36.default-release')
+    profile = webdriver.FirefoxProfile(r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\kwftlp36.default-release')
     driver = webdriver.Firefox(profile, options=options, executable_path=GeckoDriverManager().install())
     return driver
 
 
-def driverWait(driver, findType, selector):
+def driver_wait(driver, find_type, selector):
     """Driver Wait Settings."""
     while True:
-        if findType == 'css':
+        if find_type == 'css':
             try:
-                driver.find_element_by_css_selector(selector).click();
+                driver.find_element_by_css_selector(selector).click()
                 break
             except NoSuchElementException:
                 driver.implicitly_wait(0.2)
-        elif findType == 'name':
+        elif find_type == 'name':
             try:
-                driver.find_element_by_name(selector).click();
+                driver.find_element_by_name(selector).click()
                 break
             except NoSuchElementException:
                 driver.implicitly_wait(0.2)
 
 
-def loginAttempt(driver):
+def login_attempt(driver):
     """Attempting to login Amazon Account."""
     driver.get('https://www.amazon.com/gp/sign-in.html')
     try:
-        usernameField = driver.find_element_by_css_selector('#ap_email')
-        usernameField.send_keys(username)
-        driverWait(driver, 'css', '#continue')
-        passwordField = driver.find_element_by_css_selector('#ap_password')
-        passwordField.send_keys(password)
-        driverWait(driver, 'css', '#signInSubmit')
+        username_field = driver.find_element_by_css_selector('#ap_email')
+        username_field.send_keys(username)
+        driver_wait(driver, 'css', '#continue')
+        password_field = driver.find_element_by_css_selector('#ap_password')
+        password_field.send_keys(password)
+        driver_wait(driver, 'css', '#signInSubmit')
         time.sleep(2)
     except NoSuchElementException:
         pass
-    driver.get(
-        'https://www.amazon.com/stores/GeForce/RTX3080_GEFORCERTX30SERIES/page/6B204EA4-AAAC-4776-82B1-D7C3BD9DDC82')
+    driver.get('https://www.amazon.com/stores/GeForce/RTX3080_GEFORCERTX30SERIES/page/6B204EA4-AAAC-4776-82B1-D7C3BD9DDC82')
 
 
-def findingCards(driver):
+def finding_cards(driver):
     """Scanning all cards."""
     while True:
         time.sleep(1)
         html = driver.page_source
         soup = bs4.BeautifulSoup(html, 'html.parser')
         try:
-            findAllCards = soup.find_all('span', {'class': 'style__text__2xIA2'})
-            for card in findAllCards:
+            find_all_cards = soup.find_all('span', {'class': 'style__text__2xIA2'})
+            for card in find_all_cards:
                 if 'Add to Cart' in card.get_text():
                     print('Card Available!')
-                    driverWait(driver, 'css', '.style__addToCart__9TqqV')
+                    driver_wait(driver, 'css', '.style__addToCart__9TqqV')
                     driver.get('https://www.amazon.com/gp/cart/view.html?ref_=nav_cart')
-                    driverWait(driver, 'css', '.a-button-input')
+                    driver_wait(driver, 'css', '.a-button-input')
                     try:
-                        askingToLogin = driver.find_element_by_css_selector('#ap_password').is_displayed()
-                        if askingToLogin:
+                        asking_to_login = driver.find_element_by_css_selector('#ap_password').is_displayed()
+                        if asking_to_login:
                             driver.find_element_by_css_selector('#ap_password').send_keys(password)
-                            driverWait(driver, 'css', '#signInSubmit')
+                            driver_wait(driver, 'css', '#signInSubmit')
                     except NoSuchElementException:
                         pass
-                    driverWait(driver, 'css', '.a-button-input')  # Final Checkout Button!
+                    driver_wait(driver, 'css', '.a-button-input')  # Final Checkout Button!
                     print('Order Placed')
                     try:
                         client.messages.create(to=toNumber, from_=fromNumber, body='ORDER PLACED!')
@@ -112,10 +109,10 @@ def findingCards(driver):
                     return
         except (AttributeError, NoSuchElementException, TimeoutError):
             pass
-        timeSleep(5, driver)
+        time_sleep(5, driver)
 
 
 if __name__ == '__main__':
-    driver = createDriver()
-    loginAttempt(driver)
-    findingCards(driver)
+    driver = create_driver()
+    login_attempt(driver)
+    finding_cards(driver)
