@@ -42,12 +42,11 @@ def time_sleep(x, driver):
 
 
 def create_driver():
-    chrome_opts = webdriver.ChromeOptions()
-    chrome_opts.add_argument("--user-data-dir=C:/Users/Trebor/AppData/Local/Google/Chrome/User Data")
-    chrome_opts.add_argument("--profile-directory=Default")
-    chrome_opts.add_argument("--disable-extensions")
-    chrome_opts.add_experimental_option('excludeSwitches', ['enable-logging'])
-    driver = webdriver.Chrome(executable_path=ChromeDriverManager().install(), options=chrome_opts)
+    """Creating driver."""
+    options = Options()
+    options.headless = False  # Change To False if you want to see Firefox Browser Again.
+    profile = webdriver.FirefoxProfile(r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\kwftlp36.default-release')
+    driver = webdriver.Firefox(profile, options=options, executable_path=GeckoDriverManager().install())
     return driver
 
 
