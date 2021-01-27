@@ -25,7 +25,7 @@ authToken = 'authtoken'
 client = Client(accountSid, authToken)
 
 # Product Page
-url = 'https://www.newegg.com/p/pl?d=rtx+3080&N=100007709%20601357282%204841&isdeptsrh=1'
+url = 'https://www.newegg.com/p/pl?d=rtx+3080&N=100007709%20601357282%204841&isdeptsrh=1' # insert your URL here. Default RTX 3080
 
 
 def time_sleep(x, driver):
@@ -169,7 +169,7 @@ def finding_cards(driver):
 
         except NoSuchElementException:
             pass
-        time_sleep(random.randint(1, 5), driver)
+        time_sleep(random.randint(10, 20), driver) 
 
 
 if __name__ == '__main__':
