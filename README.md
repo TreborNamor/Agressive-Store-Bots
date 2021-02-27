@@ -11,7 +11,11 @@ If you guys need instructions to set up Newegg Bot or Amazon Bot go to my Google
 
 **You can test bot with this URL.**
 
-	https://www.bestbuy.com/site/searchpage.jsp?st=hdmi&_dyncharset=UTF-8&_dynSessConf=&id=pcat17071&type=page&sc=Global&cp=1&nrp=&sp=&qp=&list=n&af=true&iht=y&usc=All+Categories&ks=960&keys=keys
+	https://www.bestbuy.com/site/searchpage.jsp?_dyncharset=UTF-8&id=pcat17071&iht=y&keys=keys&ks=960&list=n&qp=currentprice_facet%3DPrice~Less%20than%20%2425&sc=Global&st=hdmi&type=page&usc=All%20Categories
+	
+**Do Not Use a URL like this. If you compare both URL's you'll see the difference. Make sure URL looks like the page above. Otherwise bot will not work.**
+
+	https://www.bestbuy.com/site/dynex-6-hdmi-cable-black/6405508.p?skuId=6405508
 
 **1. Download Pycharm Community Edition & Firefox.**
 
