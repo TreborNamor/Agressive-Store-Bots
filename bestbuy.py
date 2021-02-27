@@ -11,16 +11,16 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from webdriver_manager.firefox import GeckoDriverManager
 
-# Twilio configuration (Using Twilio is optional. Use this if you want to receive text messages when bot makes a purchase.)
+# Twilio configuration
 toNumber = 'your_phonenumber'
 fromNumber = 'twilio_phonenumber'
 accountSid = 'ssid'
 authToken = 'authtoken'
 client = Client(accountSid, authToken)
 
-
 # Product Page (By default, This URL will scan all RTX 3080's at one time.)
 url = 'https://www.bestbuy.com/site/searchpage.jsp?_dyncharset=UTF-8&id=pcat17071&iht=y&keys=keys&ks=960&list=n&qp=category_facet%3DGPUs%20%2F%20Video%20Graphics%20Cards~abcat0507002&sc=Global&st=rtx%203080&type=page&usc=All%20Categories'
+
 
 def timeSleep(x, driver):
     for i in range(x, -1, -1):
@@ -28,7 +28,6 @@ def timeSleep(x, driver):
         sys.stdout.write('{:2d} seconds'.format(i))
         sys.stdout.flush()
         time.sleep(1)
-    driver.execute_script('window.localStorage.clear();')    
     driver.refresh()
     sys.stdout.write('\r')
     sys.stdout.write('Page refreshed\n')
@@ -38,10 +37,8 @@ def timeSleep(x, driver):
 def createDriver():
     """Creating driver."""
     options = Options()
-    # Change To False if you want to see Firefox Browser Again.
-    options.headless = True
-    # Enter Firefox Profile Here in quotes.
-    profile = webdriver.FirefoxProfile(r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\kwftlp36.default-release') 
+    options.headless = False  # Change To False if you want to see Firefox Browser Again.
+    profile = webdriver.FirefoxProfile(r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\t6inpqro.Robert-1613116705360')
     driver = webdriver.Firefox(profile, options=options, executable_path=GeckoDriverManager().install())
     return driver
 
@@ -77,6 +74,7 @@ def findingCards(driver):
                 print(f'Button Found!: {findAllCards.get_text()}')
 
                 # Clicking Add to Cart.
+                # time.sleep(.3)
                 driverWait(driver, 'css', '.add-to-cart-button')
                 time.sleep(2)
 
@@ -86,6 +84,7 @@ def findingCards(driver):
                 # Checking if item is still in cart.
                 try:
                     wait.until(EC.presence_of_element_located((By.XPATH, "//*[@class='btn btn-lg btn-block btn-primary']")))
+                    time.sleep(.3)
                     driver.find_element_by_xpath("//*[@class='btn btn-lg btn-block btn-primary']").click()
                     print("Item Is Still In Cart.")
                 except (NoSuchElementException, TimeoutException):
@@ -111,12 +110,11 @@ def findingCards(driver):
                     print("\nTrying CVV Number.\n")
                     security_code = driver.find_element_by_id("credit-card-cvv")
                     time.sleep(1)
-                    # You can enter your CVV number here in quotes where 123 is.
-                    security_code.send_keys("123")  
+                    security_code.send_keys("123")  # You can enter your CVV number here.
                 except (NoSuchElementException, TimeoutException):
                     pass
 
-                # Bestbuy Text Updates. (If Available)
+                # Bestbuy Text Updates.
                 try:
                     wait2.until(EC.presence_of_element_located((By.CSS_SELECTOR, "#text-updates")))
                     driverWait(driver, 'css', '#text-updates')
@@ -124,7 +122,7 @@ def findingCards(driver):
                 except (NoSuchElementException, TimeoutException):
                     pass
 
-                # Final Checkout. Bot is ready to buy.
+                # Final Checkout.
                 try:
                     wait2.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".btn-primary")))
                     driverWait(driver, 'css', '.btn-primary')
@@ -139,7 +137,7 @@ def findingCards(driver):
                     except (NoSuchElementException, TimeoutException, ElementNotInteractableException):
                         print("Could Not Complete Checkout.")
 
-                # Completed Checkout. Sending message with Twilio.
+                # Completed Checkout.
                 print('Order Placed!')
                 try:
                     client.messages.create(to=toNumber, from_=fromNumber, body='ORDER PLACED!')
@@ -153,8 +151,7 @@ def findingCards(driver):
                 return
             else:
                 pass
-        
-        # This is the Refresh Page Timer if product is out of stock. It is prefered to leave it at 5 seconds.
+
         except NoSuchElementException:
             pass
         timeSleep(5, driver)
