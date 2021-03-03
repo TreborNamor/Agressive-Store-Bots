@@ -172,7 +172,7 @@ def finding_cards(driver):
 
         except NoSuchElementException:
             pass
-        time_sleep(5, driver) 
+        time_sleep(10, driver) 
 
 
 if __name__ == '__main__':
