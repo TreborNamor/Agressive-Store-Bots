@@ -26,8 +26,13 @@ accountSid = 'ssid'
 authToken = 'authtoken'
 client = Client(accountSid, authToken)
 
-# Product Page
-url = 'https://www.newegg.com/p/pl?d=rtx+3080&N=100007709%20601357282%204841&isdeptsrh=1' # insert your URL here. Default RTX 3080
+# insert your URL here. Default RTX 3080
+url = 'https://www.newegg.com/p/pl?d=rtx+3080&N=100007709%20601357282%204841&isdeptsrh=1' 
+# Please do not use URL of a Specific Product like the example URL below. 
+# https://www.newegg.com/evga-geforce-rtx-3080-10g-p5-3895-kr/p/N82E16814487519?Description=rtx%203080&cm_re=rtx_3080-_-14-487-519-_-Product
+# If you are only interested in a specific graphics card. Use a URL link like this instead. 
+# You'll see how I used newegg filters on the website to only show a specific card in the URL below.
+# https://www.newegg.com/p/pl?d=rtx+3080&N=100007709%20601357282%2050001402&isdeptsrh=1&LeftPriceRange=860+880
 
 
 def time_sleep(x, driver):
