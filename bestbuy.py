@@ -20,7 +20,11 @@ client = Client(accountSid, authToken)
 
 # Product Page (By default, This URL will scan all RTX 3080's at one time.)
 url = 'https://www.bestbuy.com/site/searchpage.jsp?_dyncharset=UTF-8&id=pcat17071&iht=y&keys=keys&ks=960&list=n&qp=category_facet%3DGPUs%20%2F%20Video%20Graphics%20Cards~abcat0507002&sc=Global&st=rtx%203080&type=page&usc=All%20Categories'
-
+# Please do not use URL of a Specific Product like the example URL below. 
+# https://www.bestbuy.com/site/nvidia-geforce-rtx-3080-10gb-gddr6x-pci-express-4-0-graphics-card-titanium-and-black/6429440.p?skuId=6429440
+# If you are only interested in a specific graphics card. Use a URL link like this instead. 
+# You'll see how I used bestbuy filters on website to only show a specific card on the URL below.
+# https://www.bestbuy.com/site/searchpage.jsp?id=pcat17071&qp=brand_facet%3DBrand~NVIDIA&st=rtx%203080
 
 def timeSleep(x, driver):
     for i in range(x, -1, -1):
@@ -74,7 +78,7 @@ def findingCards(driver):
                 print(f'Button Found!: {findAllCards.get_text()}')
 
                 # Clicking Add to Cart.
-                # time.sleep(.3)
+                time.sleep(.3)
                 driverWait(driver, 'css', '.add-to-cart-button')
                 time.sleep(2)
 
