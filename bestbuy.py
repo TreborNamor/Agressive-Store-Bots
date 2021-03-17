@@ -1,6 +1,4 @@
-import bs4
-import sys
-import time
+import bs4, os, sys, time, getopt
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 from selenium import webdriver
@@ -8,17 +6,23 @@ from selenium.common.exceptions import NoSuchElementException, ElementNotInterac
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver import Opera
 from webdriver_manager.firefox import GeckoDriverManager
 
+#load env variables
+from dotenv import load_dotenv
+load_dotenv()
+
 # Twilio configuration
-toNumber = 'your_phonenumber'
-fromNumber = 'twilio_phonenumber'
-accountSid = 'ssid'
-authToken = 'authtoken'
+accountSid  = os.getenv('TWILIO_SSID')
+toNumber    = os.getenv('YOUR_NUMBER')
+fromNumber  = os.getenv('TWILIO_NUMBER')
+authToken   = os.getenv('TWILIO_AUTHTOKEN')
+
 client = Client(accountSid, authToken)
 
 # Product Page (By default, This URL will scan all RTX 3080's at one time.)
+#3080 URL
 url = 'https://www.bestbuy.com/site/searchpage.jsp?_dyncharset=UTF-8&id=pcat17071&iht=y&keys=keys&ks=960&list=n&qp=category_facet%3DGPUs%20%2F%20Video%20Graphics%20Cards~abcat0507002&sc=Global&st=rtx%203080&type=page&usc=All%20Categories'
 # Please do not use URL of a Specific Product like the example URL below. 
 # https://www.bestbuy.com/site/nvidia-geforce-rtx-3080-10gb-gddr6x-pci-express-4-0-graphics-card-titanium-and-black/6429440.p?skuId=6429440
@@ -37,14 +41,30 @@ def timeSleep(x, driver):
     sys.stdout.write('Page refreshed\n')
     sys.stdout.flush()
 
-
-def createDriver():
-    """Creating driver."""
+def createFFDriver():
+    from selenium.webdriver.firefox.options import Options
     options = Options()
     options.headless = False  # Change To False if you want to see Firefox Browser Again.
-    profile = webdriver.FirefoxProfile(r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\t6inpqro.Robert-1613116705360')
+    profile = webdriver.FirefoxProfile(os.getenv('FF_PROFILE'))
     driver = webdriver.Firefox(profile, options=options, executable_path=GeckoDriverManager().install())
     return driver
+
+def createOperaDriver():
+    from selenium.webdriver.opera.options import Options
+    opera_profile = os.getenv('OPERA_PROFILE')
+    options = Options()
+    options.headless = False 
+    options.add_argument("user-data-dir=" + opera_profile)
+    driver = Opera(options=options)
+    return driver
+
+def browsersDriver(browser):
+    browsers = {
+        'opera' : createOperaDriver,
+        'firefox' : createFFDriver,
+    }
+    func = browsers.get(browser, lambda: "Invaild Browser")
+    return func()
 
 
 def driverWait(driver, findType, selector):
@@ -114,7 +134,7 @@ def findingCards(driver):
                     print("\nTrying CVV Number.\n")
                     security_code = driver.find_element_by_id("credit-card-cvv")
                     time.sleep(1)
-                    security_code.send_keys("123")  # You can enter your CVV number here.
+                    security_code.send_keys(os.getenv('CVV'))  # You can enter your CVV number here.
                 except (NoSuchElementException, TimeoutException):
                     pass
 
@@ -162,5 +182,5 @@ def findingCards(driver):
 
 
 if __name__ == '__main__':
-    driver = createDriver()
+    driver = browsersDriver(sys.argv[1])
     findingCards(driver)
