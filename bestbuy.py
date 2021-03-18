@@ -1,6 +1,7 @@
 import bs4, os, sys, time, getopt
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
+from datetime import datetime
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
@@ -37,8 +38,10 @@ def timeSleep(x, driver):
         sys.stdout.flush()
         time.sleep(1)
     driver.refresh()
+    now = datetime.now()
     sys.stdout.write('\r')
-    sys.stdout.write('Page refreshed\n')
+    sys.stdout.write('')
+    sys.stdout.write('[' + now.strftime("%d/%m/%Y %H:%M:%S") + '] Page refreshed\n')
     sys.stdout.flush()
 
 def createFFDriver():
@@ -51,10 +54,10 @@ def createFFDriver():
 
 def createOperaDriver():
     from selenium.webdriver.opera.options import Options
-    opera_profile = os.getenv('OPERA_PROFILE')
+    operaProfile = os.getenv('OPERA_PROFILE')
     options = Options()
     options.headless = False 
-    options.add_argument("user-data-dir=" + opera_profile)
+    options.add_argument("user-data-dir=" + operaProfile)
     driver = Opera(options=options)
     return driver
 
