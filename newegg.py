@@ -10,9 +10,12 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.firefox import GeckoDriverManager
-from selenium.webdriver.firefox.options import Options
 import random
+from selenium.webdriver.firefox.options import Options
+from webdriver_manager.firefox import GeckoDriverManager
+
+# Price Limit
+price_limit = 600
 
 # Newegg credentials
 username = 'your_username'
@@ -26,14 +29,8 @@ accountSid = 'ssid'
 authToken = 'authtoken'
 client = Client(accountSid, authToken)
 
-# insert your URL here. Default RTX 3080
-url = 'https://www.newegg.com/p/pl?d=rtx+3080&N=100007709%20601357282%204841&isdeptsrh=1' 
-# Please do not use URL of a Specific Product like the example URL below. 
-# https://www.newegg.com/evga-geforce-rtx-3080-10g-p5-3895-kr/p/N82E16814487519?Description=rtx%203080&cm_re=rtx_3080-_-14-487-519-_-Product
-# If you are only interested in a specific graphics card. Use a URL link like this instead. 
-# You'll see how I used newegg filters on the website to only show a specific card in the URL below.
-# https://www.newegg.com/p/pl?d=rtx+3080&N=100007709%20601357282%2050001402&isdeptsrh=1&LeftPriceRange=860+880
-
+# Product Page
+url = 'https://www.newegg.com/amd-ryzen-9-5900x/p/N82E16819113664'
 
 def time_sleep(x, driver):
     for i in range(x, -1, -1):
@@ -52,7 +49,8 @@ def create_driver():
     """Creating driver."""
     options = Options()
     options.headless = False  # Change To False if you want to see Firefox Browser Again.
-    profile = webdriver.FirefoxProfile(r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\kwftlp36.default-release')
+    profile = webdriver.FirefoxProfile(
+        r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\t6inpqro.Robert-1613116705360')
     driver = webdriver.Firefox(profile, options=options, executable_path=GeckoDriverManager().install())
     return driver
 
@@ -65,119 +63,160 @@ def driver_wait(driver, find_type, selector):
                 driver.find_element_by_css_selector(selector).click()
                 break
             except NoSuchElementException:
-                driver.implicitly_wait(0.5)
+                driver.implicitly_wait(1)
         elif find_type == 'name':
             try:
                 driver.find_element_by_name(selector).click()
                 break
             except NoSuchElementException:
-                driver.implicitly_wait(0.5)
+                driver.implicitly_wait(1)
+        elif find_type == 'xpath':
+            try:
+                driver.find_element_by_xpath(f"//*[@class='{selector}']").click()
+                break
+            except NoSuchElementException:
+                driver.implicitly_wait(1)
+
+
+def extract_page():
+    html = driver.page_source
+    soup = bs4.BeautifulSoup(html, 'html.parser')
+    return soup
+
+
+def single_search_item(soup):
+    try:
+        true = soup.find('button', {'class': 'btn btn-primary btn-wide'})
+        if true:
+            print(f"Button Found!")
+            return True
+    except NoSuchElementException:
+        return False
+
+
+def search_multiple_items(soup):
+    try:
+        true = soup.find('button', {'class': 'btn btn-primary btn-mini'})
+        if true:
+            print(f"Button Found!")
+            return True
+    except NoSuchElementException:
+        return False
+
+
+def check_price(soup):
+    try:
+        price = driver.find_element_by_xpath("//*[@class='price-current']")
+        showPrice = float(price.text[1:])
+        if showPrice <= price_limit:
+            print(f'price is under: {price_limit}')
+            return True
+        else:
+            return False
+    except NoSuchElementException:
+        print("Could not find price.")
 
 
 def finding_cards(driver):
     """Scanning all cards."""
-    print("That piece of red text above is not an error. Not sure why they would use that color.")
-    print("If you keep seeing page refreshed, the bot is working.")
-    print("Goodluck!")
-    # time.sleep(1)
+
     driver.get(url)
+
     while True:
-        html = driver.page_source
-        soup = bs4.BeautifulSoup(html, 'html.parser')
         wait = WebDriverWait(driver, 5)
-        try:
-            find_all_cards = soup.find('button', {'class': 'btn btn-primary btn-mini'})
-            if find_all_cards:
-                print(f'Button Found!: {find_all_cards.get_text()}')
-                time.sleep(1)
+        soup = extract_page()
 
-                # Clicking Add to Cart.
-                driver.find_element_by_xpath("//*[@class='btn btn-primary btn-mini']").click()
-                # time.sleep(2)
+        # Searching For Add To Cart Button.
+        if single_search_item(soup=soup):
+            if check_price(soup):
+                driver_wait(driver, 'xpath', 'btn btn-primary btn-wide')
+            else:
+                time.sleep(2)
+                finding_cards(driver)
+            break
+        elif search_multiple_items(soup=soup):
+            driver_wait(driver, 'xpath', 'btn btn-primary btn-mini')
+            break
+        else:
+            time_sleep(5, driver)
 
-                # Going To Cart.
-                driver.get('https://secure.newegg.com/shop/cart')
+    # Going To Cart.
+    driver.get('https://secure.newegg.com/shop/cart')
 
-                # Checking if item already sold out after clicking to cart.
-                try:
-                    out_of_stock = driver.find_element_by_xpath("//*[@class='btn btn-secondary']").is_enabled()
-                    if out_of_stock:
-                        driver.find_element_by_xpath("//*[@class='btn btn-secondary']").click()
-                        print("Item Is Not In Cart Anymore. Retrying..")
-                        time_sleep(1, driver)
-                        driver.get(url)
-                        time_sleep(2, driver)
-                        finding_cards(driver)
-                        return
-                    if not out_of_stock:
-                        pass
-                except (TimeoutException, NoSuchElementException, ElementNotInteractableException):
-                    pass
-
-                try:
-                    available = driver.find_element_by_xpath("//*[@class='btn btn-primary btn-wide']").is_enabled()
-                    if available:
-                        driver.find_element_by_xpath("//*[@class='btn btn-primary btn-wide']").click()
-                        print("Clicked Checkout Button in Cart.")
-                    if not available:
-                        print("Item Is Not In Cart Anymore. Retrying..")
-                        time_sleep(1, driver)
-                        driver.get(url)
-                        time_sleep(2, driver)
-                        finding_cards(driver)
-                        return
-                except (TimeoutException, NoSuchElementException):
-                    print("Item Is Not In Cart Anymore. Retrying..")
-                    driver.get(url)
-                    time_sleep(3, driver)
-                    finding_cards(driver)
-                    return
-
-                # Logging Into Account.
-                try:
-                    print("Attempting Sign-In.")
-                    wait.until(ec.visibility_of_element_located((By.ID, "labeled-input-password")))
-                    password_field = driver.find_element_by_id("labeled-input-password")
-                    time.sleep(1)
-                    password_field.send_keys(password)
-                    password_field.send_keys(Keys.ENTER)
-                except (NoSuchElementException, TimeoutException):
-                    print("Could Not Login To Account With Password.")
-
-                # Submit CVV Code(Must type CVV number.
-                try:
-                    print("Trying Credit Card CVV Number.")
-                    wait.until(ec.visibility_of_element_located(
-                        (By.XPATH, "//input[@class='form-text mask-cvv-4'][@type='text']")))
-                    security_code = driver.find_element_by_xpath("//input[@class='form-text mask-cvv-4'][@type='text']")
-                    time.sleep(.5)
-                    security_code.send_keys(Keys.BACK_SPACE + Keys.BACK_SPACE + Keys.BACK_SPACE + Keys.BACK_SPACE + cvv)
-                except (AttributeError, NoSuchElementException, TimeoutException, ElementNotInteractableException):
-                    print("Could Not Type CVV.")
-
-                # Final Checkout
-                try:
-                    wait.until(ec.visibility_of_element_located((By.XPATH, "//*[@class='btn btn-primary btn-wide']")))
-                    driver.find_element_by_xpath("//*[@class='btn btn-primary btn-wide']").click()
-                except (NoSuchElementException, TimeoutException, ElementNotInteractableException):
-                    print("Could Not proceed with Checkout.")
-
-                # Completed Checkout.
-                print('Order Placed!')
-                try:
-                    client.messages.create(to=toNumber, from_=fromNumber, body='ORDER PLACED!')
-                except (NameError, TwilioRestException):
-                    pass
-                for i in range(3):
-                    print('\a')
-                    time.sleep(1)
-                time.sleep(1800)
-                driver.quit()
-                return
-
-        except NoSuchElementException:
+    # Checking if item is still in cart.
+    try:
+        out_of_stock = driver.find_element_by_xpath("//*[@class='btn btn-secondary']").is_enabled()
+        if out_of_stock:
+            driver_wait(driver, 'xpath', 'btn btn-secondary')
+            print("Item Is Not In Cart Anymore. Retrying..")
+            time.sleep(1)
+            driver.get(url)
+            time_sleep(2, driver)
+            finding_cards(driver)
+        if not out_of_stock:
             pass
-        time_sleep(10, driver) 
+    except (TimeoutException, NoSuchElementException, ElementNotInteractableException):
+        pass
+
+    # If still in cart, attempting to click secure checkout button.
+    try:
+        available = driver.find_element_by_xpath("//*[@class='btn btn-primary btn-wide']").is_enabled()
+        if available:
+            time.sleep(1)
+            driver_wait(driver, 'xpath', 'btn btn-primary btn-wide')
+            print("Clicked Checkout Button in Cart.")
+        if not available:
+            print("Item Is Not In Cart Anymore. Retrying..")
+            time.sleep(1)
+            driver.get(url)
+            time_sleep(2, driver)
+            finding_cards(driver)
+    except (TimeoutException, NoSuchElementException):
+        print("Item Is Not In Cart Anymore. Retrying..")
+        driver.get(url)
+        time_sleep(3, driver)
+        finding_cards(driver)
+
+    # Logging Into Account.
+    try:
+        print("Attempting Sign-In.")
+        wait.until(ec.visibility_of_element_located((By.ID, "labeled-input-password")))
+        password_field = driver.find_element_by_id("labeled-input-password")
+        time.sleep(1)
+        password_field.send_keys(password)
+        password_field.send_keys(Keys.ENTER)
+    except (NoSuchElementException, TimeoutException):
+        print("Could Not Login To Account With Password.")
+
+    # Submit CVV Code(Must type CVV number.
+    try:
+        print("Trying Credit Card CVV Number.")
+        wait.until(ec.visibility_of_element_located((By.XPATH, "//input[@class='form-text mask-cvv-4'][@type='text']")))
+        security_code = driver.find_element_by_xpath("//input[@class='form-text mask-cvv-4'][@type='text']")
+        time.sleep(.5)
+        security_code.send_keys(Keys.BACK_SPACE + Keys.BACK_SPACE + Keys.BACK_SPACE + Keys.BACK_SPACE + cvv)
+    except (AttributeError, NoSuchElementException, TimeoutException, ElementNotInteractableException):
+        print("Could Not Type CVV.")
+
+    # Final Checkout
+    try:
+        wait.until(ec.visibility_of_element_located((By.XPATH, "//*[@class='btn btn-primary btn-wide']")))
+        driver.find_element_by_xpath("//*[@class='btn btn-primary btn-wide']").click()
+    except (NoSuchElementException, TimeoutException, ElementNotInteractableException):
+        print("Could Not proceed with Checkout.")
+
+    # Completed Checkout.
+    print('Order Placed!')
+    try:
+        client.messages.create(to=toNumber, from_=fromNumber, body='ORDER PLACED!')
+    except (NameError, TwilioRestException):
+        pass
+    for i in range(3):
+        print('\a')
+        time.sleep(1)
+    time.sleep(1800)
+    print("driver quit.")
+    driver.quit()
 
 
 if __name__ == '__main__':
