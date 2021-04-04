@@ -9,18 +9,19 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from webdriver_manager.chrome import ChromeDriverManager
-import random
 from selenium.webdriver.firefox.options import Options
 from webdriver_manager.firefox import GeckoDriverManager
+
+# Product Page
+url = 'https://www.newegg.com/amd-ryzen-9-5900x/p/N82E16819113664'
 
 # Price Limit
 price_limit = 600
 
 # Newegg credentials
-username = 'your_username'
-password = 'your_password'
-cvv = '123'
+username = 'your-email'
+password = 'your-password'
+cvv = 'your-CVV-number on credit card'
 
 # Twilio configuration
 toNumber = 'your_phonenumber'
@@ -29,8 +30,6 @@ accountSid = 'ssid'
 authToken = 'authtoken'
 client = Client(accountSid, authToken)
 
-# Product Page
-url = 'https://www.newegg.com/amd-ryzen-9-5900x/p/N82E16819113664'
 
 def time_sleep(x, driver):
     for i in range(x, -1, -1):
@@ -88,9 +87,8 @@ def single_search_item(soup):
     try:
         true = soup.find('button', {'class': 'btn btn-primary btn-wide'})
         if true:
-            print(f"Button Found!")
             return True
-    except NoSuchElementException:
+    except (TimeoutException, NoSuchElementException, ElementNotInteractableException):
         return False
 
 
@@ -98,9 +96,8 @@ def search_multiple_items(soup):
     try:
         true = soup.find('button', {'class': 'btn btn-primary btn-mini'})
         if true:
-            print(f"Button Found!")
             return True
-    except NoSuchElementException:
+    except (TimeoutException, NoSuchElementException, ElementNotInteractableException):
         return False
 
 
@@ -135,10 +132,14 @@ def finding_cards(driver):
                 finding_cards(driver)
             break
         elif search_multiple_items(soup=soup):
-            driver_wait(driver, 'xpath', 'btn btn-primary btn-mini')
-            break
+            try:
+                driver_wait(driver, 'xpath', 'btn btn-primary btn-mini')
+                break
+            except (TimeoutException, NoSuchElementException, ElementNotInteractableException):
+                time_sleep(5,driver)
+                finding_cards(driver)
         else:
-            time_sleep(5, driver)
+            time_sleep(6, driver)
 
     # Going To Cart.
     driver.get('https://secure.newegg.com/shop/cart')
@@ -180,6 +181,14 @@ def finding_cards(driver):
     # Logging Into Account.
     try:
         print("Attempting Sign-In.")
+        wait.until(ec.visibility_of_element_located((By.ID, "labeled-input-signEmail")))
+        password_field = driver.find_element_by_id("labeled-input-signEmail")
+        time.sleep(1)
+        password_field.send_keys(Keys.ENTER)
+    except (NoSuchElementException, TimeoutException):
+        print("Could Not Log Email Address.")
+
+    try:
         wait.until(ec.visibility_of_element_located((By.ID, "labeled-input-password")))
         password_field = driver.find_element_by_id("labeled-input-password")
         time.sleep(1)
