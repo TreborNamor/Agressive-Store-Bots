@@ -39,9 +39,6 @@ def time_sleep(x, driver):
         time.sleep(1)
     driver.execute_script('window.localStorage.clear();')
     driver.refresh()
-    sys.stdout.write('\r')
-    sys.stdout.write('Page refreshed\n')
-    sys.stdout.flush()
 
 
 def create_driver():
