@@ -125,8 +125,7 @@ def finding_cards(driver):
             if check_price(soup):
                 driver_wait(driver, 'xpath', 'btn btn-primary btn-wide')
             else:
-                time.sleep(2)
-                finding_cards(driver)
+                time.sleep(5)
             break
         elif search_multiple_items(soup=soup):
             try:
@@ -134,7 +133,6 @@ def finding_cards(driver):
                 break
             except (TimeoutException, NoSuchElementException, ElementNotInteractableException):
                 time_sleep(5,driver)
-                finding_cards(driver)
         else:
             time_sleep(6, driver)
 
