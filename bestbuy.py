@@ -4,163 +4,237 @@ import time
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, TimeoutException, \
+    WebDriverException, ElementClickInterceptedException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from webdriver_manager.firefox import GeckoDriverManager
 
-# Twilio configuration
+# ---------------------------------------------Please Read--------------------------------------------------------------
+
+# Updated: 4/12/2021
+
+# Hello everyone! Welcome to my Best Buy script.
+# Let's go over the checklist for the script to run properly.
+#   1. Product URL
+#   2. Firefox Profile
+#   3. Credit Card CVV Number
+#   4. Twilio Account
+
+# This Script only accepts Product URL's that look like this. I hope you see the difference between page examples.
+
+# Example 1 - Nvidia RTX 3080:
+# https://www.bestbuy.com/site/nvidia-geforce-rtx-3080-10gb-gddr6x-pci-express-4-0-graphics-card-titanium-and-black/6429440.p?skuId=6429440
+# Example 2 - PS5:
+# https://www.bestbuy.com/site/sony-playstation-5-console/6426149.p?skuId=6426149
+# Example 3 - Ryzen 5600x:
+# https://www.bestbuy.com/site/amd-ryzen-5-5600x-4th-gen-6-core-12-threads-unlocked-desktop-processor-with-wraith-stealth-cooler/6438943.p?skuId=6438943
+
+# This Script does not accept Product URL's that look like this.
+# https://www.bestbuy.com/site/searchpage.jsp?st=rtx+3080&_dyncharset=UTF-8&_dynSessConf=&id=pcat17071&type=page&sc=Global&cp=1&nrp=&sp=&qp=&list=n&af=true&iht=y&usc=All+Categories&ks=960&keys=keys
+
+# Highly Recommend To set up Twilio Account to receive text messages. So if bot doesn't work you'll at least get a phone
+# text message with the url link. You can click the link and try manually purchasing on your phone.
+
+# Twilio is free. Get it Here.
+# www.twilio.com/referral/BgLBXx
+
+# -----------------------------------------------Steps To Complete------------------------------------------------------
+
+# Test Link (cheap HDMI cable) - https://www.bestbuy.com/site/dynex-6-hdmi-cable-black/6405508.p?skuId=6405508
+# *Warning* - Script will try to checkout the HDMI cable twice since this is how the Bestbuy preorder script works
+# Best buy makes us click the add to cart button twice to enter Queue System. 
+# Don't worry about script buying two graphics cards though. The script will only buy one.
+# As well, Best buy won't let you check out more than 1 item.
+# To actually avoid buying HDMI cable, you can comment out Line 220. Uncomment the line when you are done testing.
+
+# 1. Product URL
+url = 'https://www.bestbuy.com/site/nvidia-geforce-rtx-3080-10gb-gddr6x-pci-express-4-0-graphics-card-titanium-and-black/6429440.p?skuId=6429440'
+
+
+# 2. Firefox Profile
+def create_driver():
+    """Creating firefox driver to control webpage. Please add your firefox profile here."""
+    options = Options()
+    options.headless = False  # Change To False if you want to see Firefox Browser Again.
+    profile = webdriver.FirefoxProfile(
+        r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\t6inpqro.Robert-1613116705360')
+    web_driver = webdriver.Firefox(profile, options=options, executable_path=GeckoDriverManager().install())
+    return web_driver
+
+
+# 3. credit card CVV Number
+CVV = '123'  # You can enter your CVV number here in quotes.
+
+# 4. Twilio Account
 toNumber = 'your_phonenumber'
 fromNumber = 'twilio_phonenumber'
 accountSid = 'ssid'
 authToken = 'authtoken'
 client = Client(accountSid, authToken)
 
-# Product Page (By default, This URL will scan all RTX 3080's at one time.)
-url = 'https://www.bestbuy.com/site/searchpage.jsp?_dyncharset=UTF-8&id=pcat17071&iht=y&keys=keys&ks=960&list=n&qp=category_facet%3DGPUs%20%2F%20Video%20Graphics%20Cards~abcat0507002&sc=Global&st=rtx%203080&type=page&usc=All%20Categories'
-# Please do not use URL of a Specific Product like the example URL below. 
-# https://www.bestbuy.com/site/nvidia-geforce-rtx-3080-10gb-gddr6x-pci-express-4-0-graphics-card-titanium-and-black/6429440.p?skuId=6429440
-# If you are only interested in a specific graphics card. Use a URL link like this instead. 
-# You'll see how I used bestbuy filters on website to only show a specific card on the URL below.
-# https://www.bestbuy.com/site/searchpage.jsp?id=pcat17071&qp=brand_facet%3DBrand~NVIDIA&st=rtx%203080
+# ----------------------------------------------------------------------------------------------------------------------
 
-def timeSleep(x, driver):
+
+def time_sleep(x, driver):
+    """Sleep timer for page refresh."""
     for i in range(x, -1, -1):
         sys.stdout.write('\r')
         sys.stdout.write('{:2d} seconds'.format(i))
         sys.stdout.flush()
         time.sleep(1)
+    driver.execute_script('window.localStorage.clear();')
     driver.refresh()
-    sys.stdout.write('\r')
-    sys.stdout.write('Page refreshed\n')
-    sys.stdout.flush()
 
 
-def createDriver():
-    """Creating driver."""
-    options = Options()
-    options.headless = False  # Change To False if you want to see Firefox Browser Again.
-    profile = webdriver.FirefoxProfile(r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\t6inpqro.Robert-1613116705360')
-    driver = webdriver.Firefox(profile, options=options, executable_path=GeckoDriverManager().install())
-    return driver
+def extract_page():
+    html = driver.page_source
+    soup = bs4.BeautifulSoup(html, 'html.parser')
+    return soup
 
 
-def driverWait(driver, findType, selector):
-    """Driver Wait Settings."""
+def driver_click(driver, find_type, selector):
+    """Driver Wait and Click Settings."""
     while True:
-        if findType == 'css':
+        if find_type == 'css':
             try:
                 driver.find_element_by_css_selector(selector).click()
                 break
             except NoSuchElementException:
-                driver.implicitly_wait(0.2)
-        elif findType == 'name':
+                driver.implicitly_wait(1)
+        elif find_type == 'name':
             try:
                 driver.find_element_by_name(selector).click()
                 break
             except NoSuchElementException:
-                driver.implicitly_wait(0.2)
+                driver.implicitly_wait(1)
+        elif find_type == 'xpath':
+            try:
+                driver.find_element_by_xpath(f"//*[@class='{selector}']").click()
+                break
+            except NoSuchElementException:
+                driver.implicitly_wait(1)
 
 
-def findingCards(driver):
-    """Scanning all cards."""
+def searching_for_card(driver):
+    """Scanning for card."""
     driver.get(url)
     while True:
-        html = driver.page_source
-        soup = bs4.BeautifulSoup(html, 'html.parser')
+        soup = extract_page()
         wait = WebDriverWait(driver, 15)
-        wait2 = WebDriverWait(driver, 2)
+        wait2 = WebDriverWait(driver, 5)
+
         try:
-            findAllCards = soup.find('button', {'class': 'btn btn-primary btn-sm btn-block btn-leading-ficon add-to-cart-button'})
-            if findAllCards:
-                print(f'Button Found!: {findAllCards.get_text()}')
+            add_to_cart_button = soup.find('button', {
+                'class': 'btn btn-primary btn-lg btn-block btn-leading-ficon add-to-cart-button'})
 
-                # Clicking Add to Cart.
-                time.sleep(.3)
-                driverWait(driver, 'css', '.add-to-cart-button')
-                time.sleep(2)
+            if add_to_cart_button:
+                print(f'Add To Cart Button Found!')
 
-                # Going To Cart.
+                # Queue System Logic.
+                try:
+                    # Entering Queue: Clicking "add to cart" 2nd time to enter queue.
+                    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".add-to-cart-button")))
+                    driver_click(driver, 'css', '.add-to-cart-button')
+                    print("Clicked Add to Cart Button. Now sending message to your phone.")
+                    print("You are now added to Best Buy's Queue System. Page will be refreshing. Please be patient.")
+
+                    # Sleep timer is here to give Please Wait Button to appear. Please don't edit this.
+                    time.sleep(5)
+                    driver.refresh()
+                    time.sleep(5)
+                except (NoSuchElementException, TimeoutException) as error:
+                    print(f'Queue System Error: ${error}')
+
+                # Sending Text Message To let you know you are in the queue system.
+                try:
+                    client.messages.create(to=toNumber, from_=fromNumber,
+                                           body=f'Your In Queue System on Bestbuy! {url}')
+                except (NameError, TwilioRestException):
+                    pass
+
+                # In queue, just waiting for "add to cart" button to turn clickable again.
+                # page refresh every 15 seconds until Add to Cart button reappears.
+                while True:
+                    try:
+                        add_to_cart = driver.find_element_by_css_selector(".add-to-cart-button")
+                        please_wait_enabled = add_to_cart.get_attribute('aria-describedby')
+
+                        if please_wait_enabled:
+                            driver.refresh()
+                            time.sleep(15)
+                        else:  # When Add to Cart appears. This will click button.
+                            print("Add To Cart Button Clicked A Second Time.")
+                            wait2.until(
+                                EC.presence_of_element_located((By.CSS_SELECTOR, ".add-to-cart-button")))
+                            time.sleep(2)
+                            driver_click(driver, 'css', '.add-to-cart-button')
+                            time.sleep(2)
+                            break
+                    except(NoSuchElementException, TimeoutException) as error:
+                        print(f'Queue System Refresh Error: ${error}')
+
+                # Going To Cart Process.
                 driver.get('https://www.bestbuy.com/cart')
 
                 # Checking if item is still in cart.
                 try:
-                    wait.until(EC.presence_of_element_located((By.XPATH, "//*[@class='btn btn-lg btn-block btn-primary']")))
-                    time.sleep(.3)
-                    driver.find_element_by_xpath("//*[@class='btn btn-lg btn-block btn-primary']").click()
+                    wait.until(
+                        EC.presence_of_element_located((By.XPATH, "//*[@class='btn btn-lg btn-block btn-primary']")))
+                    time.sleep(1)
+                    driver_click(driver, 'xpath', 'btn btn-lg btn-block btn-primary')
                     print("Item Is Still In Cart.")
                 except (NoSuchElementException, TimeoutException):
                     print("Item is not in cart anymore. Retrying..")
-                    timeSleep(3, driver)
-                    findingCards(driver)
-                    return
+                    time_sleep(3, driver)
+                    searching_for_card(driver)
 
                 # Logging Into Account.
-                print("Attempting to Login.")
+                print("Attempting to Login. Firefox should remember your login info to auto login.")
 
-                # Click Shipping Option. (If Available)
+                # Click Shipping Option. (if available)
                 try:
-                    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "#fulfillment_1losStandard0")))
-                    time.sleep(1)
-                    driverWait(driver, 'css', '#fulfillment_1losStandard0')
+                    wait2.until(EC.presence_of_element_located((By.XPATH, "//*[@class='btn btn-lg btn-block btn-primary button__fast-track']")))
+                    time.sleep(2)
+                    shipping_class = driver.find_element_by_xpath("//*[@class='ispu-card__switch']")
+                    shipping_class.click()
                     print("Clicking Shipping Option.")
-                except (NoSuchElementException, TimeoutException):
-                    pass
+                except (NoSuchElementException, TimeoutException, ElementNotInteractableException, ElementClickInterceptedException) as error:
+                    print(f'shipping error: {error}')
 
                 # Trying CVV
                 try:
                     print("\nTrying CVV Number.\n")
+                    wait2.until(EC.presence_of_element_located((By.ID, "credit-card-cvv")))
+                    time.sleep(1)
                     security_code = driver.find_element_by_id("credit-card-cvv")
                     time.sleep(1)
-                    security_code.send_keys("123")  # You can enter your CVV number here.
-                except (NoSuchElementException, TimeoutException):
-                    pass
-
-                # Bestbuy Text Updates.
-                try:
-                    wait2.until(EC.presence_of_element_located((By.CSS_SELECTOR, "#text-updates")))
-                    driverWait(driver, 'css', '#text-updates')
-                    print("Selecting Text Updates.")
+                    security_code.send_keys(CVV)
                 except (NoSuchElementException, TimeoutException):
                     pass
 
                 # Final Checkout.
                 try:
-                    wait2.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".btn-primary")))
-                    driverWait(driver, 'css', '.btn-primary')
+                    wait2.until(EC.presence_of_element_located((By.XPATH, "//*[@class='btn btn-lg btn-block btn-primary button__fast-track']")))
+                    print("clicked checkout")
+                    # comment the line down below to avoid buying when testing bot. vv
+                    driver_click(driver, 'xpath', 'btn btn-lg btn-block btn-primary button__fast-track')  
                 except (NoSuchElementException, TimeoutException, ElementNotInteractableException):
-                    try:
-                        wait2.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".btn-secondary")))
-                        driverWait(driver, 'css', '.btn-secondary')
-                        timeSleep(5, driver)
-                        wait2.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".btn-primary")))
-                        time.sleep(1)
-                        driverWait(driver, 'css', '.btn-primary')
-                    except (NoSuchElementException, TimeoutException, ElementNotInteractableException):
-                        print("Could Not Complete Checkout.")
+                    print("Could Not Complete Checkout.")
 
                 # Completed Checkout.
                 print('Order Placed!')
-                try:
-                    client.messages.create(to=toNumber, from_=fromNumber, body='ORDER PLACED!')
-                except (NameError, TwilioRestException):
-                    pass
-                for i in range(3):
-                    print('\a')
-                    time.sleep(1)
                 time.sleep(1800)
                 driver.quit()
-                return
-            else:
-                pass
 
-        except NoSuchElementException:
-            pass
-        timeSleep(5, driver)
+        except (NoSuchElementException, TimeoutException) as error:
+            print(f'error is: {error}')
+
+        time_sleep(5, driver)
 
 
 if __name__ == '__main__':
-    driver = createDriver()
-    findingCards(driver)
+    driver = create_driver()
+    searching_for_card(driver)
