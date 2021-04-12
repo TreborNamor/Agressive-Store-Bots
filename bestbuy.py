@@ -43,7 +43,11 @@ from webdriver_manager.firefox import GeckoDriverManager
 
 # -----------------------------------------------Steps To Complete------------------------------------------------------
 
-# Test Link (cheap HDMI cable) - https://www.bestbuy.com/site/dynex-6-hdmi-cable-black/6405508.p?skuId=6405508
+# Test Link 1 - Ryzen 5800x seems to be available quite often. It is the best URL to try out preorder script.
+# To actually avoid buying CPU, you can comment out Line 220. Uncomment the line when you are done testing.
+# https://www.bestbuy.com/site/amd-ryzen-7-5800x-4th-gen-8-core-16-threads-unlocked-desktop-processor-without-cooler/6439000.p?skuId=6439000
+
+# Test Link 2 (cheap HDMI cable) - https://www.bestbuy.com/site/dynex-6-hdmi-cable-black/6405508.p?skuId=6405508
 # *Warning* - Script will try to checkout the HDMI cable twice since this is how the Bestbuy preorder script works
 # Best buy makes us click the add to cart button twice to enter Queue System. 
 # Don't worry about script buying two graphics cards though. The script will only buy one.
