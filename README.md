@@ -1,4 +1,4 @@
-# How To Create A RTX 3080 Bot in Python
+# How To Create A Automated Store Bot in Python
 
 Hello GitHub, I would like to share my method of creating a aggressive Bestbuy Bot in Python. I will be using Beautifulsoup4, Selenium, and Twilio in this script. Please continue reading this for instructions on how to set up bot.
 
