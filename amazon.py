@@ -12,6 +12,7 @@ from twilio.rest import Client
 from webdriver_manager.firefox import GeckoDriverManager
 from twilio.base.exceptions import TwilioRestException
 from selenium.webdriver.firefox.options import FirefoxProfile
+from selenium.webdriver.firefox.options import Options
 
 global profile_path
 global attempting_to_buy
@@ -23,24 +24,36 @@ remove the comments on the if/else statements, put in the url in the if statemen
 tab over the four lines under else:. I'm sure there's an easier way to go about this so don't 
 hesitate to help'''
 
+# ----- setting up the bot! -----
+
 # 1. Amazon credentials
 username = ''
 password = ''
 
-    
-# 3. Main Config
-amazon_page = ''  # The URL to use
-interval = 4  # Refresh the page every X seconds (If your internet is slow and the page isn't fully loading, increase this)
-auto_buy = True  # If false will sit on final place order screen, use for testing
+# 2. Main Config
+amazon_page = ''  # The product page URL to use.
+max_price = 800  # Enter your Max Price your willing to pay and include taxes.
+webpage_refresh_timer = 4  # Default 4 seconds. If slow internet and the page isn't fully loading, increase this.
+auto_buy = False  # Set False for testing. If set to True, it will place order and checkout product.
+headless_mode = False  # Set False for testing. If True, it will hide Firefox in background for faster checkout speed.
+
+# 3. Twilio Information (Twilio is Optional - Skip this entire step if you don't want to use Twilio).
+toNumber = 'Your_Phone_Number'
+fromNumber = 'Twilio_Phone_Number'
+accountSid = 'Twilio_SSID'
+authToken = 'Twilio_AuthToken'
+client = Client(accountSid, authToken)
+
 # ----- You are done setting up the bot! -----
 
 
 def time_sleep(x, driver):
     for i in range(x, -1, -1):
         sys.stdout.write('\r')
-        sys.stdout.write('{:2d} seconds'.format(i))
+        sys.stdout.write('Monitoring Page. Refreshing in{:2d} seconds'.format(i))
         sys.stdout.flush()
         time.sleep(1)
+    driver.execute_script('window.localStorage.clear();')
 
     if not attempting_to_buy:
         driver.execute_script('window.localStorage.clear();')
@@ -49,7 +62,7 @@ def time_sleep(x, driver):
         except WebDriverException:
             print('Error while refreshing - internet down?')
         sys.stdout.write('\r')
-        sys.stdout.write('Page refreshed\n')
+        sys.stdout.write('Monitoring Page. Refreshing in{:2d} seconds'.format(i))
         sys.stdout.flush()
 
 
@@ -59,7 +72,7 @@ def get_profile_path():
         profile_path = Path(os.getenv('HOME')) / '.mozilla' / 'firefox'
     elif platform == 'darwin':
         profile_path = Path(os.getenv('HOME')) / \
-            'Library' / 'Application Support' / 'Firefox'
+                       'Library' / 'Application Support' / 'Firefox'
     elif platform == 'win32':
         profile_path = Path(os.getenv('APPDATA')) / 'Mozilla' / 'Firefox'
     if not profile_path.exists():
@@ -83,12 +96,14 @@ def prepare_sniper_profile(default_profile_path):
 
 
 def create_driver():
+    options = Options()
+    options.headless = headless_mode
     global profile_path
     profile_path = get_profile_path()
     default_profile = get_default_profile(profile_path)
     print(f'Launching Firefox using default profile: {default_profile}')
     profile = prepare_sniper_profile(profile_path / default_profile)
-    driver = webdriver.Firefox(firefox_profile=profile, executable_path=GeckoDriverManager().install())
+    driver = webdriver.Firefox(firefox_profile=profile, options=options, executable_path=GeckoDriverManager().install())
     return driver
 
 
@@ -99,17 +114,17 @@ def driver_wait(driver, find_type, selector, click=True):
         loop_id += 1
         if find_type == 'css':
             try:
-                el = driver.find_element_by_css_selector(selector)
-                if el and click:
-                    el.click()
+                element = driver.find_element_by_css_selector(selector)
+                if element and click:
+                    element.click()
                 break
             except NoSuchElementException:
                 driver.implicitly_wait(0.2)
         elif find_type == 'name':
             try:
-                el = driver.find_element_by_name(selector)
-                if el and click:
-                    el.click()
+                element = driver.find_element_by_name(selector)
+                if element and click:
+                    element.click()
                 break
             except NoSuchElementException:
                 driver.implicitly_wait(0.2)
@@ -136,7 +151,6 @@ def run_loop(driver):
     time.sleep(1)
 
     while True:
-        
         """Single product page, keep checking and refreshing."""
         attempting_to_buy = True
         bought = attempt_purchase(driver)
@@ -144,22 +158,34 @@ def run_loop(driver):
             break
         attempting_to_buy = False
 
-        time_sleep(interval, driver)
+        time_sleep(webpage_refresh_timer, driver)
+
+
+def format_price(price_text):
+    price = price_text.text
+    price = price.replace('$', '')
+    price = price.replace(',', '')
+    price = price.replace('\n', '.')
+    price = float(price)
+    return price
 
 
 def attempt_purchase(driver, index=-1):
     global auto_buy
-    
 
-    print(f'Item available! Attempting to buy..')
     try:
-        driver.find_element_by_id('buy-now-button')  # Cannot buy for some reason
+        buy_box = format_price(driver.find_element_by_id('price_inside_buybox'))
+        if buy_box <= max_price:
+            driver.find_element_by_id('buy-now-button')  # Attempt to find buy now button.
+            print(f'Item available! Attempting to buy..')
+        else:
+            return False
     except NoSuchElementException:
-        print('Buy now button did not exist, going back')
         return False
 
     print('Buy now button was found. Clicking it now.')
-    driver_wait(driver, 'css', '#buy-now-button')  # Clicks buy now
+    driver_wait(driver, 'css', '#buy-now-button')  # Clicks buy now button.
+
     try:
         asking_to_login = driver.find_element_by_css_selector('#ap_password').is_displayed()
         if asking_to_login:
@@ -182,14 +208,15 @@ def attempt_purchase(driver, index=-1):
         iframe = driver.find_element_by_css_selector('#turbo-checkout-iframe')
         driver.switch_to.frame(iframe)
         driver_wait(driver, 'css', '.a-color-price', False)  # Wait for inner iframe content to load
-        
-        #this might work idk. if statement that says if the url of the out of stock statement pops up, then go home.
+
+        # this might work idk. if statement that says if the url of the out of stock statement pops up, then go home.
         '''if driver.current_url == 'out of stock url here':
             go_home()
             return False'''
-        #indent the four lines under else if you find out of stock url
-        #else:
-        driver_wait(driver, 'css', '#turbo-checkout-panel-container', False)  # Without this order doesnt go through for some reason, just blanks the page
+        # indent the four lines under else if you find out of stock url
+        # else:
+        driver_wait(driver, 'css', '#turbo-checkout-panel-container',
+                    False)  # Without this order doesnt go through for some reason, just blanks the page
         driver_wait(driver, 'css', '#turbo-checkout-pyo-button')  # Click place order button on modal
         notify_and_exit()
         return True
@@ -197,10 +224,12 @@ def attempt_purchase(driver, index=-1):
     else:
         print('Auto buy was not enabled, waiting on purchase screen..')
         try:
-            client.messages.create(to=toNumber, from_=fromNumber, body=f'Item available! (auto_buy=False)! Link: {driver.current_url}')
+            client.messages.create(to=toNumber, from_=fromNumber,
+                                   body=f'Item available! (auto_buy=False)! Link: {driver.current_url}')
         except (NameError, TwilioRestException):
             pass
         return True
+
 
 def notify_and_exit():
     global auto_buy
@@ -214,11 +243,13 @@ def notify_and_exit():
     auto_buy = False  # Safety
     return True
 
+
 def go_home():
     try:
         driver.get(amazon_page)
     except WebDriverException:
         print('Failed to load page - internet down?')
+
 
 if __name__ == '__main__':
     driver = create_driver()
