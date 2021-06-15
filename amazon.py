@@ -15,14 +15,6 @@ from selenium.webdriver.firefox.options import FirefoxProfile
 from selenium.webdriver.firefox.options import Options
 
 global profile_path
-global attempting_to_buy
-
-'''Pretty sure bot works for the most part. However, the bot breaks when the out of stock
-page shows up, so I tried to implement a fix around line 186. This all depends if the out
-of stock URL is different from the amazon_page URL. If it is different, you will need to 
-remove the comments on the if/else statements, put in the url in the if statement, and 
-tab over the four lines under else:. I'm sure there's an easier way to go about this so don't 
-hesitate to help'''
 
 # ----- setting up the bot! -----
 
@@ -31,10 +23,10 @@ username = ''
 password = ''
 
 # 2. Main Config
-amazon_page = ''  # The product page URL to use.
+url = 'https://www.amazon.com/PlayStation-5-Console/dp/B08FC5L3RG/ref=sr_1_6?dchild=1&keywords=ps5+console&qid=1623757970&sr=8-6'  # Enter your product page URL.
 max_price = 800  # Enter your Max Price your willing to pay and include taxes.
 webpage_refresh_timer = 4  # Default 4 seconds. If slow internet and the page isn't fully loading, increase this.
-auto_buy = False  # Set False for testing. If set to True, it will place order and checkout product.
+test_mode = True  # Set False for testing. If set to True, it will place order and checkout product.
 headless_mode = False  # Set False for testing. If True, it will hide Firefox in background for faster checkout speed.
 
 # 3. Twilio Information (Twilio is Optional - Skip this entire step if you don't want to use Twilio).
@@ -133,6 +125,15 @@ def driver_wait(driver, find_type, selector, click=True):
 def login_attempt(driver):
     """Attempting to login Amazon Account."""
     driver.get('https://www.amazon.com/gp/sign-in.html')
+
+    print("\nWelcome To Amazon Bot! Join The Discord To find out When Amazon drops GPU's and Consoles!")
+    print("Discord: https://discord.gg/qQDvwT6q3e")
+    print("Donations keep the script updated!\n")
+    print("Cashapp Donation: $TreborNamor")
+    print("Bitcoin Donation: 16JRvDjqc1HrdCQu8NRVNoEjzvcgNtf6zW ")
+    print("Dogecoin Donation: DSdN7qR1QR5VjvR1Ktwb7x4reg7ZeiSyhi \n")
+    print("Bot deployed!\n")
+
     try:
         username_field = driver.find_element_by_css_selector('#ap_email')
         username_field.send_keys(username)
@@ -143,7 +144,7 @@ def login_attempt(driver):
         time.sleep(2)
     except NoSuchElementException:
         pass
-    driver.get(amazon_page)
+    driver.get(url)
 
 
 def run_loop(driver):
@@ -171,20 +172,18 @@ def format_price(price_text):
 
 
 def attempt_purchase(driver, index=-1):
-    global auto_buy
+    global test_mode
 
     try:
         buy_box = format_price(driver.find_element_by_id('price_inside_buybox'))
         if buy_box <= max_price:
             driver.find_element_by_id('buy-now-button')  # Attempt to find buy now button.
             print(f'Item available! Attempting to buy..')
+            driver_wait(driver, 'css', '#buy-now-button')
         else:
             return False
     except NoSuchElementException:
         return False
-
-    print('Buy now button was found. Clicking it now.')
-    driver_wait(driver, 'css', '#buy-now-button')  # Clicks buy now button.
 
     try:
         asking_to_login = driver.find_element_by_css_selector('#ap_password').is_displayed()
@@ -202,7 +201,7 @@ def attempt_purchase(driver, index=-1):
 
     """I have seen two types of screens here, one that is a modal with a button to place order (I believe amazon
     calls this "Turbo Checkout"), another is an entire new page. This may need tweaking."""
-    if auto_buy:
+    if not test_mode:
         # Wait for checkout to load - turbo checkout is an iframe we have to attach into
         driver_wait(driver, 'css', '#turbo-checkout-iframe', False)
         iframe = driver.find_element_by_css_selector('#turbo-checkout-iframe')
@@ -215,24 +214,24 @@ def attempt_purchase(driver, index=-1):
             return False'''
         # indent the four lines under else if you find out of stock url
         # else:
-        driver_wait(driver, 'css', '#turbo-checkout-panel-container',
-                    False)  # Without this order doesnt go through for some reason, just blanks the page
+        driver_wait(driver, 'css', '#turbo-checkout-panel-container', False)  # Without this order doesnt go through for some reason, just blanks the page
+        time.sleep(.5)
         driver_wait(driver, 'css', '#turbo-checkout-pyo-button')  # Click place order button on modal
         notify_and_exit()
         return True
 
     else:
-        print('Auto buy was not enabled, waiting on purchase screen..')
+        print('Test Mode is enabled, waiting on purchase screen..')
         try:
             client.messages.create(to=toNumber, from_=fromNumber,
-                                   body=f'Item available! (auto_buy=False)! Link: {driver.current_url}')
+                                   body=f'Item available! (test_mode=False)! Link: {driver.current_url}')
         except (NameError, TwilioRestException):
             pass
         return True
 
 
 def notify_and_exit():
-    global auto_buy
+    global test_mode
 
     print(f'Order should be placed')
     for i in range(3):
@@ -240,13 +239,13 @@ def notify_and_exit():
         time.sleep(1)
     time.sleep(1800)
     driver.quit()
-    auto_buy = False  # Safety
+    test_mode = False  # Safety
     return True
 
 
 def go_home():
     try:
-        driver.get(amazon_page)
+        driver.get(url)
     except WebDriverException:
         print('Failed to load page - internet down?')
 
@@ -254,5 +253,4 @@ def go_home():
 if __name__ == '__main__':
     driver = create_driver()
     login_attempt(driver)
-    attempting_to_buy = False
     run_loop(driver)
