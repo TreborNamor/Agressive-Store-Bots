@@ -12,18 +12,44 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
 from webdriver_manager.firefox import GeckoDriverManager
 
-# Product Page
-url = 'https://www.newegg.com/amd-ryzen-9-5900x/p/N82E16819113664'
+# ---------------------------------------------Please Read--------------------------------------------------------------
 
-# Price Limit
-price_limit = 600
+# Updated: 6/15/2021
 
-# Newegg credentials
+# Hello everyone! Welcome to my Best Buy script.
+# Let's go over the checklist for the script to run properly.
+#   1. Product URL
+#   2. Newegg credentials
+#   3. Firefox Profile
+#   4. Twilio Account (Optional)
+
+# -----------------------------------------------Steps To Complete------------------------------------------------------
+
+# 1. Product URL
+url = 'https://www.newegg.com/amd-ryzen-7-5800x/p/N82E16819113665?Item=N82E16819113665'
+
+price_limit = 800
+test_mode = True  # Set test_mode to True when testing bot checkout process, and set it to False when your done testing.
+headless_mode = False  # Set False for testing. If True, it will hide Firefox in background for faster checkout speed.
+webpage_refresh_timer = 5  # Default 5 seconds. If you go under 5 seconds you could possibly trigger bot detection.
+
+# 2. Newegg credentials
 username = 'your-email'
 password = 'your-password'
 cvv = 'your-CVV-number on credit card'
 
-# Twilio configuration
+
+# 3. Firefox Profile
+def create_driver():
+    """Creating firefox driver to control webpage. Please add your firefox profile down below."""
+    options = Options()
+    options.headless = headless_mode
+    profile = webdriver.FirefoxProfile(r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\t6inpqro.Robert-1613116705360')
+    driver = webdriver.Firefox(profile, options=options, executable_path=GeckoDriverManager().install())
+    return driver
+
+
+# 4. Twilio Account
 toNumber = 'your_phonenumber'
 fromNumber = 'twilio_phonenumber'
 accountSid = 'ssid'
@@ -31,24 +57,17 @@ authToken = 'authtoken'
 client = Client(accountSid, authToken)
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def time_sleep(x, driver):
     for i in range(x, -1, -1):
         sys.stdout.write('\r')
-        sys.stdout.write('{:2d} seconds'.format(i))
+        sys.stdout.write('Monitoring Page. Refreshing in{:2d} seconds'.format(i))
         sys.stdout.flush()
         time.sleep(1)
     driver.execute_script('window.localStorage.clear();')
     driver.refresh()
-
-
-def create_driver():
-    """Creating driver."""
-    options = Options()
-    options.headless = False  # Change To False if you want to see Firefox Browser Again.
-    profile = webdriver.FirefoxProfile(
-        r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\t6inpqro.Robert-1613116705360')
-    driver = webdriver.Firefox(profile, options=options, executable_path=GeckoDriverManager().install())
-    return driver
 
 
 def driver_wait(driver, find_type, selector):
@@ -98,6 +117,16 @@ def search_multiple_items(soup):
         return False
 
 
+def show_love():
+    print("\nWelcome To Bestbuy Bot! Join The Discord To find out What Week Bestbuy drops GPU's and Consoles!")
+    print("Discord: https://discord.gg/qQDvwT6q3e")
+    print("Donations keep the script updated!\n")
+    print("Cashapp Donation: $TreborNamor")
+    print("Bitcoin Donation: 16JRvDjqc1HrdCQu8NRVNoEjzvcgNtf6zW ")
+    print("Dogecoin Donation: DSdN7qR1QR5VjvR1Ktwb7x4reg7ZeiSyhi \n")
+    print("Bot deployed!\n")
+
+
 def check_price(soup):
     try:
         price = driver.find_element_by_xpath("//*[@class='price-current']")
@@ -113,9 +142,7 @@ def check_price(soup):
 
 def finding_cards(driver):
     """Scanning all cards."""
-
     driver.get(url)
-
     while True:
         wait = WebDriverWait(driver, 5)
         soup = extract_page()
@@ -126,15 +153,17 @@ def finding_cards(driver):
                 driver_wait(driver, 'xpath', 'btn btn-primary btn-wide')
             else:
                 time.sleep(5)
+                finding_cards(driver)
+                break
             break
-        elif search_multiple_items(soup=soup):
+        if search_multiple_items(soup=soup):
             try:
                 driver_wait(driver, 'xpath', 'btn btn-primary btn-mini')
                 break
             except (TimeoutException, NoSuchElementException, ElementNotInteractableException):
-                time_sleep(5,driver)
+                time_sleep(5, driver)
         else:
-            time_sleep(6, driver)
+            time_sleep(webpage_refresh_timer, driver)
 
     # Going To Cart.
     driver.get('https://secure.newegg.com/shop/cart')
@@ -204,13 +233,16 @@ def finding_cards(driver):
 
     # Final Checkout
     try:
-        wait.until(ec.visibility_of_element_located((By.XPATH, "//*[@class='btn btn-primary btn-wide']")))
-        driver.find_element_by_xpath("//*[@class='btn btn-primary btn-wide']").click()
+        if test_mode:
+            print("Test Mode is enabled, waiting on purchase screen..")
+        if not test_mode:
+            wait.until(ec.visibility_of_element_located((By.XPATH, "//*[@class='btn btn-primary btn-wide']")))
+            driver.find_element_by_xpath("//*[@class='btn btn-primary btn-wide']").click()
+            print('Order Placed!')
     except (NoSuchElementException, TimeoutException, ElementNotInteractableException):
         print("Could Not proceed with Checkout.")
 
     # Completed Checkout.
-    print('Order Placed!')
     try:
         client.messages.create(to=toNumber, from_=fromNumber, body='ORDER PLACED!')
     except (NameError, TwilioRestException):
@@ -225,4 +257,5 @@ def finding_cards(driver):
 
 if __name__ == '__main__':
     driver = create_driver()
+    show_love()
     finding_cards(driver)
