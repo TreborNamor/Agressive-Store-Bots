@@ -46,6 +46,8 @@ from webdriver_manager.firefox import GeckoDriverManager
 # Test Link (Ryzen 5800x) - The Ryzen 5800x is always available and still uses Bestbuy's Queue System.
 # https://www.bestbuy.com/site/amd-ryzen-7-5800x-4th-gen-8-core-16-threads-unlocked-desktop-processor-without-cooler/6439000.p?skuId=6439000
 test_mode = True  # Set test_mode to True when testing bot checkout process, and set it to False when your done testing.
+headless_mode = False  # Set False for testing. If True, it will hide Firefox in background for faster checkout speed.
+webpage_refresh_timer = 3  # Default 3 seconds. If slow internet and the page isn't fully loading, increase this.
 
 # 1. Product URL
 url = 'https://www.bestbuy.com/site/amd-ryzen-7-5800x-4th-gen-8-core-16-threads-unlocked-desktop-processor-without-cooler/6439000.p?skuId=6439000'
@@ -53,9 +55,9 @@ url = 'https://www.bestbuy.com/site/amd-ryzen-7-5800x-4th-gen-8-core-16-threads-
 
 # 2. Firefox Profile
 def create_driver():
-    """Creating firefox driver to control webpage. Please add your firefox profile here."""
+    """Creating firefox driver to control webpage. Please add your firefox profile down below."""
     options = Options()
-    options.headless = False  # Change To False if you want to see Firefox Browser Again.
+    options.headless = headless_mode
     profile = webdriver.FirefoxProfile(r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\t6inpqro.Robert-1613116705360')
     web_driver = webdriver.Firefox(profile, options=options, executable_path=GeckoDriverManager().install())
     return web_driver
@@ -78,7 +80,7 @@ def time_sleep(x, driver):
     """Sleep timer for page refresh."""
     for i in range(x, -1, -1):
         sys.stdout.write('\r')
-        sys.stdout.write('{:2d} seconds'.format(i))
+        sys.stdout.write('Monitoring Page. Refreshing in{:2d} seconds'.format(i))
         sys.stdout.flush()
         time.sleep(1)
     driver.execute_script('window.localStorage.clear();')
@@ -86,6 +88,7 @@ def time_sleep(x, driver):
 
 
 def extract_page():
+    """bs4 page parser."""
     html = driver.page_source
     soup = bs4.BeautifulSoup(html, 'html.parser')
     return soup
@@ -114,9 +117,18 @@ def driver_click(driver, find_type, selector):
                 driver.implicitly_wait(1)
 
 
-def searching_for_card(driver):
-    """Scanning for card."""
+def searching_for_product(driver):
+    """Scanning for product."""
     driver.get(url)
+
+    print("\nWelcome To Bestbuy Bot! Join The Discord To find out What Week Bestbuy drops GPU's and Consoles!")
+    print("Discord: https://discord.gg/qQDvwT6q3e")
+    print("Donations keep the script updated!\n")
+    print("Cashapp Donation: $TreborNamor")
+    print("Bitcoin Donation: 16JRvDjqc1HrdCQu8NRVNoEjzvcgNtf6zW ")
+    print("Dogecoin Donation: DSdN7qR1QR5VjvR1Ktwb7x4reg7ZeiSyhi \n")
+    print("Bot deployed!\n")
+
     while True:
         soup = extract_page()
         wait = WebDriverWait(driver, 15)
@@ -135,7 +147,7 @@ def searching_for_card(driver):
                     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".add-to-cart-button")))
                     driver_click(driver, 'css', '.add-to-cart-button')
                     print("Clicked Add to Cart Button. Now sending message to your phone.")
-                    print("You are now added to Best Buy's Queue System. Page will be refreshing. Please be patient.\n")
+                    print("You are now added to Best Buy's Queue System. Page will be refreshing. Please be patient. It could take a few minutes.\n")
 
                     # Sleep timer is here to give Please Wait Button to appear. Please don't edit this.
                     time.sleep(5)
@@ -189,7 +201,7 @@ def searching_for_card(driver):
                 except (NoSuchElementException, TimeoutException):
                     print("Item is not in cart anymore. Retrying..")
                     time_sleep(3, driver)
-                    searching_for_card(driver)
+                    searching_for_product(driver)
 
                 # Logging Into Account.
                 print("\nAttempting to Login. Firefox should remember your login info to auto login.")
@@ -238,9 +250,9 @@ def searching_for_card(driver):
         except (NoSuchElementException, TimeoutException) as error:
             print(f'error is: {error}')
 
-        time_sleep(5, driver)
+        time_sleep(webpage_refresh_timer, driver)
 
 
 if __name__ == '__main__':
     driver = create_driver()
-    searching_for_card(driver)
+    searching_for_product(driver)
