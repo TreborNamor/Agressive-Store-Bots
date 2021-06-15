@@ -14,14 +14,14 @@ from webdriver_manager.firefox import GeckoDriverManager
 
 # ---------------------------------------------Please Read--------------------------------------------------------------
 
-# Updated: 4/12/2021
+# Updated: 6/15/2021
 
 # Hello everyone! Welcome to my Best Buy script.
 # Let's go over the checklist for the script to run properly.
 #   1. Product URL
 #   2. Firefox Profile
 #   3. Credit Card CVV Number
-#   4. Twilio Account
+#   4. Twilio Account (Optional)
 
 # This Script only accepts Product URL's that look like this. I hope you see the difference between page examples.
 
@@ -43,19 +43,12 @@ from webdriver_manager.firefox import GeckoDriverManager
 
 # -----------------------------------------------Steps To Complete------------------------------------------------------
 
-# Test Link 1 - Ryzen 5800x seems to be available quite often. It is the best URL to try out preorder script.
-# To actually avoid buying CPU, you can comment out Line 220. Uncomment the line when you are done testing.
+# Test Link (Ryzen 5800x) - The Ryzen 5800x is always available and still uses Bestbuy's Queue System.
 # https://www.bestbuy.com/site/amd-ryzen-7-5800x-4th-gen-8-core-16-threads-unlocked-desktop-processor-without-cooler/6439000.p?skuId=6439000
-
-# Test Link 2 (cheap HDMI cable) - https://www.bestbuy.com/site/dynex-6-hdmi-cable-black/6405508.p?skuId=6405508
-# *Warning* - Script will try to checkout the HDMI cable twice since this is how the Bestbuy preorder script works
-# Best buy makes us click the add to cart button twice to enter Queue System. 
-# Don't worry about script buying two graphics cards though. The script will only buy one.
-# As well, Best buy won't let you check out more than 1 item.
-# To actually avoid buying HDMI cable, you can comment out Line 220. Uncomment the line when you are done testing.
+test_mode = True  # Set test_mode to True when testing bot checkout process, and set it to False when your done testing.
 
 # 1. Product URL
-url = 'https://www.bestbuy.com/site/nvidia-geforce-rtx-3080-10gb-gddr6x-pci-express-4-0-graphics-card-titanium-and-black/6429440.p?skuId=6429440'
+url = 'https://www.bestbuy.com/site/amd-ryzen-7-5800x-4th-gen-8-core-16-threads-unlocked-desktop-processor-without-cooler/6439000.p?skuId=6439000'
 
 
 # 2. Firefox Profile
@@ -63,8 +56,7 @@ def create_driver():
     """Creating firefox driver to control webpage. Please add your firefox profile here."""
     options = Options()
     options.headless = False  # Change To False if you want to see Firefox Browser Again.
-    profile = webdriver.FirefoxProfile(
-        r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\t6inpqro.Robert-1613116705360')
+    profile = webdriver.FirefoxProfile(r'C:\Users\Trebor\AppData\Roaming\Mozilla\Firefox\Profiles\t6inpqro.Robert-1613116705360')
     web_driver = webdriver.Firefox(profile, options=options, executable_path=GeckoDriverManager().install())
     return web_driver
 
@@ -73,10 +65,10 @@ def create_driver():
 CVV = '123'  # You can enter your CVV number here in quotes.
 
 # 4. Twilio Account
-toNumber = 'your_phonenumber'
-fromNumber = 'twilio_phonenumber'
-accountSid = 'ssid'
-authToken = 'authtoken'
+toNumber = 'Your_Phone_Number'
+fromNumber = 'Twilio_Phone_Number'
+accountSid = 'Twilio_SSID'
+authToken = 'Twilio_AuthToken'
 client = Client(accountSid, authToken)
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -143,7 +135,7 @@ def searching_for_card(driver):
                     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".add-to-cart-button")))
                     driver_click(driver, 'css', '.add-to-cart-button')
                     print("Clicked Add to Cart Button. Now sending message to your phone.")
-                    print("You are now added to Best Buy's Queue System. Page will be refreshing. Please be patient.")
+                    print("You are now added to Best Buy's Queue System. Page will be refreshing. Please be patient.\n")
 
                     # Sleep timer is here to give Please Wait Button to appear. Please don't edit this.
                     time.sleep(5)
@@ -161,6 +153,10 @@ def searching_for_card(driver):
 
                 # In queue, just waiting for "add to cart" button to turn clickable again.
                 # page refresh every 15 seconds until Add to Cart button reappears.
+                # Don't worry about people saying you'll losing your space in line if you refresh page.
+                # I've tested this bot plenty times and it is not true. You can test the bot to find out.
+                # When bot clicks "Add to Cart" button, a request is sent to server, and server is just waiting for a response.
+                # No possible way to lose your spot once request is sent.
                 while True:
                     try:
                         add_to_cart = driver.find_element_by_css_selector(".add-to-cart-button")
@@ -170,7 +166,7 @@ def searching_for_card(driver):
                             driver.refresh()
                             time.sleep(15)
                         else:  # When Add to Cart appears. This will click button.
-                            print("Add To Cart Button Clicked A Second Time.")
+                            print("Add To Cart Button Clicked A Second Time.\n")
                             wait2.until(
                                 EC.presence_of_element_located((By.CSS_SELECTOR, ".add-to-cart-button")))
                             time.sleep(2)
@@ -196,7 +192,10 @@ def searching_for_card(driver):
                     searching_for_card(driver)
 
                 # Logging Into Account.
-                print("Attempting to Login. Firefox should remember your login info to auto login.")
+                print("\nAttempting to Login. Firefox should remember your login info to auto login.")
+                print("If you're having trouble with auto login. Close all firefox windows.")
+                print("Open firefox manually, and go to bestbuy's website. While Sign in, make sure to click 'Keep Me Logged In' button.")
+                print("Then run bot again.\n")
 
                 # Click Shipping Option. (if available)
                 try:
@@ -222,9 +221,12 @@ def searching_for_card(driver):
                 # Final Checkout.
                 try:
                     wait2.until(EC.presence_of_element_located((By.XPATH, "//*[@class='btn btn-lg btn-block btn-primary button__fast-track']")))
-                    print("clicked checkout")
-                    # comment the line down below to avoid buying when testing bot. vv
-                    driver_click(driver, 'xpath', 'btn btn-lg btn-block btn-primary button__fast-track')  
+                    # comment the one down below. vv
+                    if not test_mode:
+                        print("Product Checkout Completed.")
+                        driver_click(driver, 'xpath', 'btn btn-lg btn-block btn-primary button__fast-track')
+                    if test_mode:
+                        print("Test Mode - Product Checkout Completed.")
                 except (NoSuchElementException, TimeoutException, ElementNotInteractableException):
                     print("Could Not Complete Checkout.")
 
