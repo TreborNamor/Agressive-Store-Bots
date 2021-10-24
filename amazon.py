@@ -26,7 +26,7 @@ password = ''
 url = 'https://www.amazon.com/PlayStation-5-Console/dp/B08FC5L3RG/ref=sr_1_6?dchild=1&keywords=ps5+console&qid=1623757970&sr=8-6'  # Enter your product page URL.
 max_price = 800  # Enter your Max Price your willing to pay and include taxes.
 webpage_refresh_timer = 4  # Default 4 seconds. If slow internet and the page isn't fully loading, increase this.
-test_mode = True  # Set False for testing. If set to True, it will place order and checkout product.
+test_mode = True  # Set True for testing. If set to False, it will place order and checkout product.
 headless_mode = False  # Set False for testing. If True, it will hide Firefox in background for faster checkout speed.
 
 # 3. Twilio Information (Twilio is Optional - Skip this entire step if you don't want to use Twilio).
