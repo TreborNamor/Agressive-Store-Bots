@@ -29,7 +29,7 @@ If you guys need instructions to set up Newegg Bot or Amazon Bot go to my Google
 **3. Go to terminal and type:**
 'pip install -r requirements.txt' (pip3 if using python3)
 
-	![](images/step3.png)
+![](images/step3.png)
 
 **4. Right click bestbuybot folder, and create new python file.**
 ![](images/step4.png)
