@@ -27,12 +27,9 @@ If you guys need instructions to set up Newegg Bot or Amazon Bot go to my Google
 ![](images/step2.png)
 
 **3. Go to terminal and type:**
-1. `pip install beautifulsoup4`
-2. `pip install selenium`
-3. `pip install webdriver-manager==3.4.0`
-4. `pip install twilio`
+'pip install -r requirements.txt' (pip3 if using python3)
 
-	![](images/step3.png)
+![](images/step3.png)
 
 **4. Right click bestbuybot folder, and create new python file.**
 ![](images/step4.png)
